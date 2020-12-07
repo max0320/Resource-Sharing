@@ -14,8 +14,7 @@ function formatDate(momentDate) {
 //如果是个人的产品显示修改界面,否则显示订购界面
 const fetcher = url => fetch(url).then(res => res.json());
 function ttime (){
-  let mtime=new Date()
-  return formatDate(mtime)
+  return new Date()
 }
 export default function Product (props) {
   //change back please
@@ -70,7 +69,11 @@ export default function Product (props) {
     }
   
   }
-  const session=props.session
+  const session = {
+    user:{
+      name:"10086"
+    }
+  }
   const data=props.data
   const product = data.response[0]
   const username = product.name
@@ -80,19 +83,83 @@ export default function Product (props) {
   if(session.user.name!=username){
     return (
       <Layout>
-      <div>
-        <h2 style={{color:'rgb(52, 109, 241)'}}>欢迎订购</h2>
-        <div className="buyproduct">
-        <img src={product.productimg}></img>
-        <a href={"/product/"+product.id}><h2>{product.productname}</h2></a>
-        <p>{product.detail}</p>
-    <p>{product.price}{product.per}</p>
-    <p>发布者:{product.name}</p>
-    <p className="time">{formatDate(product.starttime)}</p>
-    <p className="time">{formatDate(product.endtime)}</p>
-    <button className="postbtn" onClick={buy}>订购 </button>
-      </div>
-      </div>
+      <Formik
+      initialValues={{
+          id:product.id,
+          name: session.user.name,
+          image:product.productimg,
+          productname: product.productname,
+          price:product.price,
+          per:product.per,
+          dateFrom:formatDate(product.starttime),
+          dateTo:formatDate(product.endtime),
+          detail:Product.detail
+        }}
+      validationSchema={Yup.object().shape({
+        price: Yup.number().moreThan(0, "price must be greater than 0"),
+        productname: Yup.string().trim().required("Name can not be empty")
+      })}
+      onSubmit={(values) => {
+          console.log(values)
+          const res =fetch('https://api.hezh.fail/change', {
+          method: 'put',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            id: values.id,
+            productname: values.productname,
+            price: values.price,
+            per:values.per,
+            name: values.name,
+            image:values.image,
+            dateFrom:values.dateFrom,
+            dateTo:values.dateTo,
+            detail:values.detail
+          })
+        })
+        alert("修改成功")
+        }}
+      render={props =>
+          <form onSubmit={props.handleSubmit}>
+              <h1>欢迎订购</h1>
+              <img className="displayimg"src={props.values.image}></img>
+            <div className="content">
+            <div>
+                <label className="label">productname: &nbsp;&nbsp;
+                <output name="product">{props.values.productname}</output></label>
+              </div>
+              <div>
+                <label className="label">detail:&nbsp;&nbsp; 
+                <output name="deatil">{props.values.detail}</output></label>
+              </div>
+              <div>
+                <label className="label">price：&nbsp;&nbsp;
+                <output name="price">{props.values.price}</output></label>
+              </div>
+              <div>
+                <label className="label">单位：&nbsp;&nbsp;
+                <output name="per">{props.values.per}</output></label>
+              </div>
+              <div>
+                <label className="label">imageurl
+                <output name="per">{props.values.image}</output></label>
+              </div>
+              <div>
+                <label className="label">商品起始时间：&nbsp;&nbsp;
+                <output name="per">{props.values.dateFrom}</output></label>
+              </div>
+              <div>
+                <label className="label">商品结束时间：&nbsp;&nbsp;
+                <output name="per">{props.values.dateTo}</output></label>
+              </div>
+              <div className="submit-area">
+                <button className="postbtn" onclick={buy}>订购</button>
+              </div>
+            </div>
+          </form>
+        }
+   />
       </Layout>
     )
   }
@@ -143,7 +210,7 @@ export default function Product (props) {
           <div>
               <label className="label">productname： </label><input className="inputbox" type="text" id="productname" name="productname" value={props.values.productname}
                                         onChange={props.handleChange} onBlur={props.handleBlur}/>
-{props.touched.productname && props.errors.productname && <div>{props.errors.productname}</div>}
+{props.touched.productname && props.errors.productname && <div></div>}
             </div>
             <div>
               <label className="label">detail: </label><input className="inputbox" type="text" id="detail" name="detail" value={props.values.detail}
